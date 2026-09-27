@@ -1,53 +1,76 @@
-import Accordion from "./components/accordion/Accordion";
+import { useCallback, useEffect, useState } from "react";
+import type { Product } from "./types/product";
+import ProductCard from "./components/ProductCard";
+import FavouritesList from "./components/FavouritesList";
+import Toast from "./components/Toast";
+import "./App.css";
 
 function App() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<{ visible: boolean; message: string; type: "add" | "remove" }>({
+    visible: false,
+    message: "",
+    type: "add",
+  });
+
+  useEffect(() => {
+    fetch("https://dummyjson.com/products?limit=9")
+      .then((res) => res.json())
+      .then((data) => {
+        setProducts(data.products);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const showToast = useCallback((product: Product, action: "add" | "remove") => {
+    const message =
+      action === "add"
+        ? `Đã thêm "${product.title}" vào yêu thích!`
+        : `Đã xoá "${product.title}" khỏi yêu thích.`;
+    setToast({ visible: true, message, type: action });
+  }, []);
+
+  const hideToast = useCallback(() => {
+    setToast((prev) => ({ ...prev, visible: false }));
+  }, []);
+
   return (
-    <Accordion>
-      <Accordion.Item index={0}>
-        <Accordion.Header>Facebook</Accordion.Header>
-        <Accordion.Panel>
-          Facebook là mạng xã hội lớn nhất thế giới, cho phép người dùng kết nối với bạn bè, gia đình và những người có cùng sở thích. 
-          Người dùng có thể chia sẻ trạng thái, ảnh, video, tham gia các nhóm (Groups) và trang (Pages), 
-          cũng như sử dụng tính năng nhắn tin qua Messenger để giao tiếp trực tiếp.
-        </Accordion.Panel>
-      </Accordion.Item>
+    <div className="app">
+      <header className="app-header">
+        <h1>🛍️ Cửa hàng Zustand</h1>
+        <p className="subtitle">Quản lý yêu thích với Zustand Store</p>
+      </header>
 
-      <Accordion.Item index={1}>
-        <Accordion.Header>Instagram</Accordion.Header>
-        <Accordion.Panel>
-          Instagram là một nền tảng mạng xã hội tập trung chủ yếu vào việc chia sẻ hình ảnh và video. 
-          Nổi bật với các tính năng như Stories (biến mất sau 24 giờ), Reels (video ngắn tương tự TikTok) và bộ lọc ảnh đa dạng, 
-          Instagram đặc biệt thu hút giới trẻ và các nhãn hàng muốn xây dựng hình ảnh thương hiệu trực quan.
-        </Accordion.Panel>
-      </Accordion.Item>
+      <main className="app-main">
+        <FavouritesList />
 
-      <Accordion.Item index={2}>
-        <Accordion.Header>X (trước đây là Twitter)</Accordion.Header>
-        <Accordion.Panel>
-          X là mạng xã hội microblogging nơi người dùng tương tác thông qua các bài đăng ngắn. 
-          Nền tảng này rất mạnh trong việc cập nhật tin tức theo thời gian thực, thảo luận về các sự kiện đang diễn ra (trending topics), 
-          và là nơi các chính trị gia, nhà báo, người nổi tiếng thường xuyên sử dụng để phát ngôn trực tiếp.
-        </Accordion.Panel>
-      </Accordion.Item>
+        <section className="products-section">
+          <h2>📦 Danh sách sản phẩm</h2>
+          {loading ? (
+            <p className="loading">Đang tải sản phẩm...</p>
+          ) : (
+            <div className="products-grid">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onShowPopup={showToast}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
 
-      <Accordion.Item index={3}>
-        <Accordion.Header>LinkedIn</Accordion.Header>
-        <Accordion.Panel>
-          LinkedIn là mạng xã hội định hướng kinh doanh và tuyển dụng lớn nhất hiện nay. 
-          Thay vì chia sẻ cuộc sống cá nhân, người dùng tạo hồ sơ chuyên nghiệp (CV online), kết nối với đồng nghiệp, 
-          tìm kiếm cơ hội việc làm, và chia sẻ kiến thức, kinh nghiệm liên quan đến ngành nghề của họ.
-        </Accordion.Panel>
-      </Accordion.Item>
-
-      <Accordion.Item index={4}>
-        <Accordion.Header>TikTok</Accordion.Header>
-        <Accordion.Panel>
-          TikTok là nền tảng video ngắn bùng nổ mạnh mẽ trong những năm gần đây. 
-          Với thuật toán đề xuất nội dung (For You Page) cực kỳ thông minh và dễ gây nghiện, TikTok cho phép người dùng 
-          tạo và xem các video giải trí, nhảy múa, giáo dục... có thời lượng từ vài giây đến vài phút với nhiều hiệu ứng bắt mắt.
-        </Accordion.Panel>
-      </Accordion.Item>
-    </Accordion>
+      <Toast
+        message={toast.message}
+        visible={toast.visible}
+        type={toast.type}
+        onHide={hideToast}
+      />
+    </div>
   );
 }
 
